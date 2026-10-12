@@ -18,13 +18,16 @@ SNP, gene and cell indicators.
 </div>
 
 ---
+```
 remotes::install_github(
   "mommy003/BayesMAPJoint",
   upgrade = "never"
 )
-
+```
 Then verify:
+```
 library(BayesMAPJoint)
 
 packageVersion("BayesMAPJoint")
 exists("bayesmap_joint_prior")
+```
