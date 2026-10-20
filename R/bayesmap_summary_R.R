@@ -32,6 +32,9 @@
 #' @param nub Prior degrees of freedom for SNP effects.
 #' @param nue Prior degrees of freedom for residual variance.
 #' @param verbose Logical indicating whether progress is printed.
+#' @param joint_blocks_per_iter Number of connected SNP-gene-cell triplets
+#'   updated jointly per iteration. The default `0` preserves the original
+#'   summary sampler exactly.
 #'
 #' @return
 #' An object of class `"BayesMAPSummary"` and `"BayesMAP"` containing
@@ -69,7 +72,8 @@ bayesmap_summary <- function(
     sigmaAlphaSq = 1,
     nub = 4,
     nue = 4,
-    verbose = TRUE
+    verbose = TRUE,
+    joint_blocks_per_iter = 0L
 ) {
   ## ================================================================
   ## 1. Dimensions and validation
@@ -200,6 +204,15 @@ bayesmap_summary <- function(
       is.na(verbose)) {
     stop("verbose must be TRUE or FALSE.")
   }
+
+  if (length(joint_blocks_per_iter) != 1L ||
+      !is.finite(joint_blocks_per_iter) ||
+      joint_blocks_per_iter < 0 ||
+      joint_blocks_per_iter != as.integer(joint_blocks_per_iter)) {
+    stop("joint_blocks_per_iter must be a non-negative integer.")
+  }
+
+  joint_blocks_per_iter <- as.integer(joint_blocks_per_iter)
 
   if (!is.finite(startPiSnp) ||
       startPiSnp <= 0 ||
@@ -490,6 +503,62 @@ bayesmap_summary <- function(
       pathways = pathways,
       rho = rho
     )
+
+    ## --------------------------------------------------------------
+    ## 7.6a Optional local joint indicator updates
+    ## --------------------------------------------------------------
+
+    if (joint_blocks_per_iter > 0L) {
+      joint_blocks <- .sample_joint_indicator_blocks(
+        L = L,
+        A = A,
+        B = B,
+        number = joint_blocks_per_iter
+      )
+
+      if (nrow(joint_blocks) > 0L) {
+        joint_out <- updateJointIndicatorsSummary_cpp(
+          bhat = bhat,
+          LD = LD,
+          N = N,
+          beta = beta,
+          delta = delta,
+          Delta = Delta,
+          gamma = gamma,
+          L = L,
+          A = A,
+          B = B,
+          snp_index = joint_blocks[, "snp"],
+          gene_index = joint_blocks[, "gene"],
+          cell_index = joint_blocks[, "cell"],
+          vare = vare,
+          sigmaBetaSq = sigmaBetaSq,
+          alpha1 = alpha1,
+          alpha2 = alpha2,
+          alpha3 = alpha3,
+          mu_pi = mu_pi,
+          mu_Pi = mu_Pi,
+          baseline = baseline,
+          pathways = pathways,
+          rho = rho
+        )
+
+        beta <- joint_out$beta
+        delta <- joint_out$delta
+        Delta <- joint_out$Delta
+        gamma <- joint_out$gamma
+        nnz <- joint_out$nnz
+
+        LDelta <- as.numeric(L %*% Delta)
+        Agamma <- as.numeric(A %*% gamma)
+        eta_pi <- mu_pi + LDelta * alpha1 + Agamma * alpha2 + baseline
+        z_pi <- updateZ_cpp(indicator = delta, eta = eta_pi)
+
+        Bgamma <- as.numeric(B %*% gamma)
+        xi_g <- mu_Pi + Bgamma * alpha3 + pathways
+        z_Pi <- updateZ_cpp(indicator = Delta, eta = xi_g)
+      }
+    }
 
     ## --------------------------------------------------------------
     ## 7.7 Cell inclusion probability
@@ -787,6 +856,7 @@ bayesmap_summary <- function(
     niter = niter,
     N = N,
     phenotype_variance = phenotype_variance,
+    joint_blocks_per_iter = joint_blocks_per_iter,
     dimensions = c(
       m = m,
       G = G,

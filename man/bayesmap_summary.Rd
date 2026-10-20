@@ -28,7 +28,8 @@ bayesmap_summary(
   sigmaAlphaSq = 1,
   nub = 4,
   nue = 4,
-  verbose = TRUE
+  verbose = TRUE,
+  joint_blocks_per_iter = 0L
 )
 }
 \arguments{
@@ -79,6 +80,10 @@ bayesmap_summary(
 \item{nue}{Prior degrees of freedom for residual variance.}
 
 \item{verbose}{Logical indicating whether progress is printed.}
+
+\item{joint_blocks_per_iter}{Number of connected SNP-gene-cell triplets
+updated jointly per iteration. The default \code{0} preserves the original
+summary sampler exactly.}
 }
 \value{
 An object of class \code{"BayesMAPSummary"} and \code{"BayesMAP"} containing
