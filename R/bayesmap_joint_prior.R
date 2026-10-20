@@ -12,7 +12,11 @@
 #   a_rho + b_rho = rhoPriorStrength
 #
 # Default experiment:
-#   priorPiGene      = 0.05
+#   startPiSnp       = 0.01
+#   startPiGene      = 0.10
+#   startRho         = 0.10
+#   startH2          = 0.20
+#   priorPiGene      = 0.10
 #   priorRho         = 0.05
 #   rhoPriorStrength = 20
 #   sigmaMuPiSq      = 1
@@ -37,15 +41,15 @@ bayesmap_joint_prior <- function(
     store_beta = TRUE,
     store_delta = TRUE,
     joint_blocks_per_iter = 5L,
-    startPiSnp = 0.05,
+    startPiSnp = 0.01,
     startPiGene = 0.10,
     startRho = 0.10,
-    startH2 = 0.5,
-    mu_pi = 0,
+    startH2 = 0.20,
+    mu_pi = qnorm(0.01),
     mu_Pi = NULL,
 
     ## NEW higher-level prior arguments
-    priorPiGene = 0.01,
+    priorPiGene = 0.10,
     priorRho = 0.05,
     rhoPriorStrength = 20,
     sigmaMuPiSq = 1,

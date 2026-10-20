@@ -6,8 +6,7 @@
 \alias{BayesMAPJoint-package}
 \title{BayesMAPJoint}
 \description{
-Experimental Bayesian multi-level association mapping package with blocked
-joint SNP-gene-cell indicator updates.
+Bayesian multi-level association mapping package.
 }
 \author{
 \strong{Maintainer}: Moksedul Momin \email{cvasu.momin@gmail.com} [copyright holder]

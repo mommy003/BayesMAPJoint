@@ -57,7 +57,8 @@ bayesmap(
 
 \item{joint_blocks_per_iter}{Number of supplementary local
 SNP-gene-cell blocks updated jointly per iteration. The default zero
-preserves the original sampler.}
+preserves the original sampler. Use a small positive value through
+\code{\link[=bayesmap_joint]{bayesmap_joint()}} for the experimental blocked sampler.}
 
 \item{startPiSnp}{Initial SNP inclusion probability.}
 

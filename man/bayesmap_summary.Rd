@@ -28,7 +28,12 @@ bayesmap_summary(
   sigmaAlphaSq = 1,
   nub = 4,
   nue = 4,
-  verbose = TRUE
+  verbose = TRUE,
+  joint_blocks_per_iter = 0L,
+  priorPiGene = NULL,
+  priorRho = NULL,
+  rhoPriorStrength = 20,
+  sigmaMuPiSq = 1
 )
 }
 \arguments{
@@ -79,6 +84,20 @@ bayesmap_summary(
 \item{nue}{Prior degrees of freedom for residual variance.}
 
 \item{verbose}{Logical indicating whether progress is printed.}
+
+\item{joint_blocks_per_iter}{Number of connected SNP-gene-cell triplets
+updated jointly per iteration. The default \code{0} preserves the original
+summary sampler exactly.}
+
+\item{priorPiGene}{Optional prior mean gene inclusion probability. When
+supplied, \code{mu_Pi} has a normal prior centred at \code{qnorm(priorPiGene)}.}
+
+\item{priorRho}{Optional prior mean cell inclusion probability.}
+
+\item{rhoPriorStrength}{Concentration of the beta prior on \code{rho} when
+\code{priorRho} is supplied.}
+
+\item{sigmaMuPiSq}{Prior variance of \code{mu_Pi} when \code{priorPiGene} is supplied.}
 }
 \value{
 An object of class \code{"BayesMAPSummary"} and \code{"BayesMAP"} containing

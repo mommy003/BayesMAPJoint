@@ -17,8 +17,32 @@ updateGamma_cpp <- function(gamma, delta, Delta, A, B, L, alpha1, alpha2, alpha3
     .Call(`_BayesMAPJoint_updateGamma_cpp`, gamma, delta, Delta, A, B, L, alpha1, alpha2, alpha3, mu_pi, mu_Pi, baseline, pathways, rho)
 }
 
+#' Jointly update local SNP-gene-cell indicator blocks
+#'
+#' Each requested block contains one SNP, one gene and one cell. The
+#' function enumerates all eight configurations of `(delta_j, Delta_g,
+#' gamma_c)` and samples from their exact full conditional while holding
+#' all other variables fixed. The SNP effect is analytically integrated
+#' when the eight state probabilities are calculated and is subsequently
+#' sampled conditionally if the selected SNP state is nonzero.
+#'
+#' Indices supplied from R are one-based.
+#'
+#' @keywords internal
 updateJointIndicators_cpp <- function(X, ycorr, beta, delta, Delta, gamma, L, A, B, snp_index, gene_index, cell_index, xpx, vare, sigmaBetaSq, alpha1, alpha2, alpha3, mu_pi, mu_Pi, baseline, pathways, rho) {
     .Call(`_BayesMAPJoint_updateJointIndicators_cpp`, X, ycorr, beta, delta, Delta, gamma, L, A, B, snp_index, gene_index, cell_index, xpx, vare, sigmaBetaSq, alpha1, alpha2, alpha3, mu_pi, mu_Pi, baseline, pathways, rho)
+}
+
+#' Jointly update SNP-gene-cell indicators using summary statistics
+#'
+#' Enumerates all eight states of a connected SNP, gene and cell indicator
+#' triplet. The SNP effect is integrated out using the same summary-data
+#' likelihood as `updateBetaDeltaSummary_cpp()` and sampled conditionally
+#' after a state is selected. Indices supplied from R are one-based.
+#'
+#' @keywords internal
+updateJointIndicatorsSummary_cpp <- function(bhat, LD, N, beta, delta, Delta, gamma, L, A, B, snp_index, gene_index, cell_index, vare, sigmaBetaSq, alpha1, alpha2, alpha3, mu_pi, mu_Pi, baseline, pathways, rho) {
+    .Call(`_BayesMAPJoint_updateJointIndicatorsSummary_cpp`, bhat, LD, N, beta, delta, Delta, gamma, L, A, B, snp_index, gene_index, cell_index, vare, sigmaBetaSq, alpha1, alpha2, alpha3, mu_pi, mu_Pi, baseline, pathways, rho)
 }
 
 updateZ_cpp <- function(indicator, eta) {
