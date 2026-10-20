@@ -35,6 +35,12 @@
 #' @param joint_blocks_per_iter Number of connected SNP-gene-cell triplets
 #'   updated jointly per iteration. The default `0` preserves the original
 #'   summary sampler exactly.
+#' @param priorPiGene Optional prior mean gene inclusion probability. When
+#'   supplied, `mu_Pi` has a normal prior centred at `qnorm(priorPiGene)`.
+#' @param priorRho Optional prior mean cell inclusion probability.
+#' @param rhoPriorStrength Concentration of the beta prior on `rho` when
+#'   `priorRho` is supplied.
+#' @param sigmaMuPiSq Prior variance of `mu_Pi` when `priorPiGene` is supplied.
 #'
 #' @return
 #' An object of class `"BayesMAPSummary"` and `"BayesMAP"` containing
@@ -73,7 +79,11 @@ bayesmap_summary <- function(
     nub = 4,
     nue = 4,
     verbose = TRUE,
-    joint_blocks_per_iter = 0L
+    joint_blocks_per_iter = 0L,
+    priorPiGene = NULL,
+    priorRho = NULL,
+    rhoPriorStrength = 20,
+    sigmaMuPiSq = 1
 ) {
   ## ================================================================
   ## 1. Dimensions and validation
@@ -214,6 +224,39 @@ bayesmap_summary <- function(
 
   joint_blocks_per_iter <- as.integer(joint_blocks_per_iter)
 
+  if (!is.null(priorPiGene) &&
+      (length(priorPiGene) != 1L || !is.finite(priorPiGene) ||
+       priorPiGene <= 0 || priorPiGene >= 1)) {
+    stop("priorPiGene must be NULL or strictly between 0 and 1.")
+  }
+
+  if (!is.null(priorRho) &&
+      (length(priorRho) != 1L || !is.finite(priorRho) ||
+       priorRho <= 0 || priorRho >= 1)) {
+    stop("priorRho must be NULL or strictly between 0 and 1.")
+  }
+
+  if (length(rhoPriorStrength) != 1L ||
+      !is.finite(rhoPriorStrength) || rhoPriorStrength <= 0) {
+    stop("rhoPriorStrength must be positive.")
+  }
+
+  if (length(sigmaMuPiSq) != 1L ||
+      !is.finite(sigmaMuPiSq) || sigmaMuPiSq <= 0) {
+    stop("sigmaMuPiSq must be positive.")
+  }
+
+  mu_Pi_prior_mean <- if (is.null(priorPiGene)) 0 else qnorm(priorPiGene)
+  mu_Pi_prior_variance <- if (is.null(priorPiGene)) {
+    sigmaAlphaSq
+  } else {
+    sigmaMuPiSq
+  }
+
+  rho_prior_a <- if (is.null(priorRho)) 1 else priorRho * rhoPriorStrength
+  rho_prior_b <- if (is.null(priorRho)) 1 else
+    (1 - priorRho) * rhoPriorStrength
+
   if (!is.finite(startPiSnp) ||
       startPiSnp <= 0 ||
       startPiSnp >= 1) {
@@ -260,7 +303,11 @@ bayesmap_summary <- function(
   }
 
   if (is.null(mu_Pi)) {
-    mu_Pi <- qnorm(startPiGene)
+    mu_Pi <- if (is.null(priorPiGene)) {
+      qnorm(startPiGene)
+    } else {
+      mu_Pi_prior_mean
+    }
   }
 
   if (length(mu_pi) != 1L || !is.finite(mu_pi)) {
@@ -568,8 +615,8 @@ bayesmap_summary <- function(
 
     rho <- rbeta(
       1L,
-      shape1 = gamma_sum + 1,
-      shape2 = C - gamma_sum + 1
+      shape1 = gamma_sum + rho_prior_a,
+      shape2 = C - gamma_sum + rho_prior_b
     )
 
     ## --------------------------------------------------------------
@@ -690,8 +737,9 @@ bayesmap_summary <- function(
       Bgamma * alpha3 -
       pathways
 
-    C0P <- G + 1 / sigmaAlphaSq
-    r0P <- sum(zcorrP)
+    C0P <- G + 1 / mu_Pi_prior_variance
+    r0P <- sum(zcorrP) +
+      mu_Pi_prior_mean / mu_Pi_prior_variance
 
     mu_Pi <- rnorm(
       1L,
@@ -857,6 +905,12 @@ bayesmap_summary <- function(
     N = N,
     phenotype_variance = phenotype_variance,
     joint_blocks_per_iter = joint_blocks_per_iter,
+    prior = list(
+      priorPiGene = priorPiGene,
+      priorRho = priorRho,
+      rhoPriorStrength = rhoPriorStrength,
+      sigmaMuPiSq = sigmaMuPiSq
+    ),
     dimensions = c(
       m = m,
       G = G,
