@@ -7,18 +7,16 @@
 bayesmap_joint(..., joint_blocks_per_iter = 5L)
 }
 \arguments{
-\item{...}{Arguments passed to \code{bayesmap()}.}
+\item{...}{Arguments passed to \code{\link[=bayesmap]{bayesmap()}}.}
 
-\item{joint_blocks_per_iter}{Number of connected SNP-gene-cell triplets
-updated jointly per MCMC iteration. Small values such as 1--5 are
-recommended initially.}
+\item{joint_blocks_per_iter}{Number of local triplets jointly updated per
+MCMC iteration. Small values such as 1--5 are recommended initially.}
 }
 \value{
-A \code{BayesMAP} fit with class \code{BayesMAPJoint} and an additional
-\code{joint_blocks_per_iter} field.
+A \code{BayesMAP} fit with an additional \code{joint_blocks_per_iter} field.
 }
 \description{
-Experimental version of \code{bayesmap()} that adds exact local blocked
-Gibbs updates for connected SNP-gene-cell indicator triplets. All other
-model components and returned objects are unchanged.
+Experimental version of \code{\link[=bayesmap]{bayesmap()}} that adds exact local blocked Gibbs
+updates for connected SNP-gene-cell indicator triplets. All other model
+components and returned objects are unchanged.
 }
