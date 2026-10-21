@@ -161,6 +161,40 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// updateJointIndicatorsSummaryBlocks_cpp
+List updateJointIndicatorsSummaryBlocks_cpp(NumericVector bhat_block, NumericMatrix LD_block, double N, NumericVector beta, IntegerVector delta, IntegerVector Delta, IntegerVector gamma, NumericMatrix L, NumericMatrix A, NumericMatrix B, IntegerVector block_indices, IntegerVector snp_index, IntegerVector gene_index, IntegerVector cell_index, double vare, double sigmaBetaSq, double alpha1, double alpha2, double alpha3, double mu_pi, double mu_Pi, NumericVector baseline, NumericVector pathways, double rho);
+RcppExport SEXP _BayesMAPJoint_updateJointIndicatorsSummaryBlocks_cpp(SEXP bhat_blockSEXP, SEXP LD_blockSEXP, SEXP NSEXP, SEXP betaSEXP, SEXP deltaSEXP, SEXP DeltaSEXP, SEXP gammaSEXP, SEXP LSEXP, SEXP ASEXP, SEXP BSEXP, SEXP block_indicesSEXP, SEXP snp_indexSEXP, SEXP gene_indexSEXP, SEXP cell_indexSEXP, SEXP vareSEXP, SEXP sigmaBetaSqSEXP, SEXP alpha1SEXP, SEXP alpha2SEXP, SEXP alpha3SEXP, SEXP mu_piSEXP, SEXP mu_PiSEXP, SEXP baselineSEXP, SEXP pathwaysSEXP, SEXP rhoSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type bhat_block(bhat_blockSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type LD_block(LD_blockSEXP);
+    Rcpp::traits::input_parameter< double >::type N(NSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type Delta(DeltaSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type L(LSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type A(ASEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type B(BSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type block_indices(block_indicesSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type snp_index(snp_indexSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type gene_index(gene_indexSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type cell_index(cell_indexSEXP);
+    Rcpp::traits::input_parameter< double >::type vare(vareSEXP);
+    Rcpp::traits::input_parameter< double >::type sigmaBetaSq(sigmaBetaSqSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha1(alpha1SEXP);
+    Rcpp::traits::input_parameter< double >::type alpha2(alpha2SEXP);
+    Rcpp::traits::input_parameter< double >::type alpha3(alpha3SEXP);
+    Rcpp::traits::input_parameter< double >::type mu_pi(mu_piSEXP);
+    Rcpp::traits::input_parameter< double >::type mu_Pi(mu_PiSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type baseline(baselineSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type pathways(pathwaysSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    rcpp_result_gen = Rcpp::wrap(updateJointIndicatorsSummaryBlocks_cpp(bhat_block, LD_block, N, beta, delta, Delta, gamma, L, A, B, block_indices, snp_index, gene_index, cell_index, vare, sigmaBetaSq, alpha1, alpha2, alpha3, mu_pi, mu_Pi, baseline, pathways, rho));
+    return rcpp_result_gen;
+END_RCPP
+}
 // updateZ_cpp
 NumericVector updateZ_cpp(IntegerVector indicator, NumericVector eta);
 RcppExport SEXP _BayesMAPJoint_updateZ_cpp(SEXP indicatorSEXP, SEXP etaSEXP) {
@@ -181,6 +215,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_BayesMAPJoint_updateGamma_cpp", (DL_FUNC) &_BayesMAPJoint_updateGamma_cpp, 14},
     {"_BayesMAPJoint_updateJointIndicators_cpp", (DL_FUNC) &_BayesMAPJoint_updateJointIndicators_cpp, 23},
     {"_BayesMAPJoint_updateJointIndicatorsSummary_cpp", (DL_FUNC) &_BayesMAPJoint_updateJointIndicatorsSummary_cpp, 23},
+    {"_BayesMAPJoint_updateJointIndicatorsSummaryBlocks_cpp", (DL_FUNC) &_BayesMAPJoint_updateJointIndicatorsSummaryBlocks_cpp, 24},
     {"_BayesMAPJoint_updateZ_cpp", (DL_FUNC) &_BayesMAPJoint_updateZ_cpp, 2},
     {NULL, NULL, 0}
 };

@@ -29,7 +29,12 @@ bayesmap_summary_blocks(
   sigmaAlphaSq = 1,
   nub = 4,
   nue = 4,
-  verbose = TRUE
+  verbose = TRUE,
+  joint_blocks_per_iter = 0L,
+  priorPiGene = NULL,
+  priorRho = NULL,
+  rhoPriorStrength = 20,
+  sigmaMuPiSq = 1
 )
 }
 \arguments{
@@ -83,6 +88,21 @@ corresponding to each LD block.}
 \item{nue}{Prior degrees of freedom for residual variance.}
 
 \item{verbose}{Logical; print MCMC progress.}
+
+\item{joint_blocks_per_iter}{Number of connected SNP-gene-cell triplets
+jointly updated per MCMC iteration. The default \code{0} preserves the
+original block sampler.}
+
+\item{priorPiGene}{Optional prior mean gene inclusion probability.
+When supplied, the prior mean of \code{mu_Pi} is \code{qnorm(priorPiGene)}.}
+
+\item{priorRho}{Optional prior mean cell inclusion probability.}
+
+\item{rhoPriorStrength}{Concentration of the beta prior on \code{rho} when
+\code{priorRho} is supplied.}
+
+\item{sigmaMuPiSq}{Prior variance of \code{mu_Pi} when \code{priorPiGene}
+is supplied.}
 }
 \value{
 An object of class

@@ -33,6 +33,16 @@
 #' @param nub Prior degrees of freedom for SNP-effect variance.
 #' @param nue Prior degrees of freedom for residual variance.
 #' @param verbose Logical; print MCMC progress.
+#' @param joint_blocks_per_iter Number of connected SNP-gene-cell triplets
+#'   jointly updated per MCMC iteration. The default `0` preserves the
+#'   original block sampler.
+#' @param priorPiGene Optional prior mean gene inclusion probability.
+#'   When supplied, the prior mean of `mu_Pi` is `qnorm(priorPiGene)`.
+#' @param priorRho Optional prior mean cell inclusion probability.
+#' @param rhoPriorStrength Concentration of the beta prior on `rho` when
+#'   `priorRho` is supplied.
+#' @param sigmaMuPiSq Prior variance of `mu_Pi` when `priorPiGene`
+#'   is supplied.
 #'
 #' @details
 #' This function implements the block-wise version of BayesMAP for GWAS
@@ -81,7 +91,12 @@ bayesmap_summary_blocks <- function(
     sigmaAlphaSq = 1,
     nub = 4,
     nue = 4,
-    verbose = TRUE
+    verbose = TRUE,
+    joint_blocks_per_iter = 0L,
+    priorPiGene = NULL,
+    priorRho = NULL,
+    rhoPriorStrength = 20,
+    sigmaMuPiSq = 1
 ) {
   ## ================================================================
   ## 1. Dimensions and validation
@@ -127,6 +142,21 @@ bayesmap_summary_blocks <- function(
   LD_blocks <- validated_blocks$LD_blocks
   block_indices <- validated_blocks$block_indices
   n_blocks <- length(LD_blocks)
+
+  ## Map every genome-wide SNP index to its LD block
+  snp_to_block <- integer(m)
+
+  for (block_number in seq_len(n_blocks)) {
+    snp_to_block[
+      block_indices[[block_number]]
+    ] <- block_number
+  }
+
+  if (any(snp_to_block == 0L)) {
+    stop(
+      "Every SNP must be assigned to exactly one LD block."
+    )
+  }
 
   if (is.null(baseline)) {
     baseline <- numeric(m)
@@ -194,6 +224,73 @@ bayesmap_summary_blocks <- function(
     stop("verbose must be TRUE or FALSE.")
   }
 
+  if (length(joint_blocks_per_iter) != 1L ||
+      !is.finite(joint_blocks_per_iter) ||
+      joint_blocks_per_iter < 0 ||
+      joint_blocks_per_iter != as.integer(joint_blocks_per_iter)) {
+    stop("joint_blocks_per_iter must be a non-negative integer.")
+  }
+
+  joint_blocks_per_iter <- as.integer(
+    joint_blocks_per_iter
+  )
+
+  if (!is.null(priorPiGene) &&
+      (length(priorPiGene) != 1L ||
+       !is.finite(priorPiGene) ||
+       priorPiGene <= 0 ||
+       priorPiGene >= 1)) {
+    stop(
+      "priorPiGene must be NULL or strictly between 0 and 1."
+    )
+  }
+
+  if (!is.null(priorRho) &&
+      (length(priorRho) != 1L ||
+       !is.finite(priorRho) ||
+       priorRho <= 0 ||
+       priorRho >= 1)) {
+    stop(
+      "priorRho must be NULL or strictly between 0 and 1."
+    )
+  }
+
+  if (length(rhoPriorStrength) != 1L ||
+      !is.finite(rhoPriorStrength) ||
+      rhoPriorStrength <= 0) {
+    stop("rhoPriorStrength must be positive.")
+  }
+
+  if (length(sigmaMuPiSq) != 1L ||
+      !is.finite(sigmaMuPiSq) ||
+      sigmaMuPiSq <= 0) {
+    stop("sigmaMuPiSq must be positive.")
+  }
+
+  mu_Pi_prior_mean <- if (is.null(priorPiGene)) {
+    0
+  } else {
+    qnorm(priorPiGene)
+  }
+
+  mu_Pi_prior_variance <- if (is.null(priorPiGene)) {
+    sigmaAlphaSq
+  } else {
+    sigmaMuPiSq
+  }
+
+  rho_prior_a <- if (is.null(priorRho)) {
+    1
+  } else {
+    priorRho * rhoPriorStrength
+  }
+
+  rho_prior_b <- if (is.null(priorRho)) {
+    1
+  } else {
+    (1 - priorRho) * rhoPriorStrength
+  }
+
   if (!is.finite(startPiSnp) ||
       startPiSnp <= 0 ||
       startPiSnp >= 1) {
@@ -240,7 +337,11 @@ bayesmap_summary_blocks <- function(
   }
 
   if (is.null(mu_Pi)) {
-    mu_Pi <- qnorm(startPiGene)
+    mu_Pi <- if (is.null(priorPiGene)) {
+      qnorm(startPiGene)
+    } else {
+      mu_Pi_prior_mean
+    }
   }
 
   if (length(mu_pi) != 1L || !is.finite(mu_pi)) {
@@ -445,14 +546,112 @@ bayesmap_summary_blocks <- function(
       rho = rho
     )
 
+    ## 7.6a Optional joint SNP-gene-cell updates
+
+    if (joint_blocks_per_iter > 0L) {
+      joint_blocks <- .sample_joint_indicator_blocks(
+        L = L,
+        A = A,
+        B = B,
+        number = joint_blocks_per_iter
+      )
+
+      if (nrow(joint_blocks) > 0L) {
+        selected_ld_blocks <- snp_to_block[
+          joint_blocks[, "snp"]
+        ]
+
+        for (
+          block_number in unique(selected_ld_blocks)
+        ) {
+          selected_rows <- which(
+            selected_ld_blocks == block_number
+          )
+
+          idx <- block_indices[[block_number]]
+
+          joint_out <-
+            updateJointIndicatorsSummaryBlocks_cpp(
+              bhat_block = bhat[idx],
+              LD_block = LD_blocks[[block_number]],
+              N = N,
+              beta = beta,
+              delta = delta,
+              Delta = Delta,
+              gamma = gamma,
+              L = L,
+              A = A,
+              B = B,
+              block_indices = as.integer(idx),
+              snp_index = as.integer(
+                joint_blocks[selected_rows, "snp"]
+              ),
+              gene_index = as.integer(
+                joint_blocks[selected_rows, "gene"]
+              ),
+              cell_index = as.integer(
+                joint_blocks[selected_rows, "cell"]
+              ),
+              vare = vare,
+              sigmaBetaSq = sigmaBetaSq,
+              alpha1 = alpha1,
+              alpha2 = alpha2,
+              alpha3 = alpha3,
+              mu_pi = mu_pi,
+              mu_Pi = mu_Pi,
+              baseline = baseline,
+              pathways = pathways,
+              rho = rho
+            )
+
+          beta <- joint_out$beta
+          delta <- joint_out$delta
+          Delta <- joint_out$Delta
+          gamma <- joint_out$gamma
+        }
+
+        nnz <- sum(delta)
+
+        ## Joint updates changed the indicators, so refresh
+        ## the latent probit quantities.
+
+        LDelta <- as.numeric(L %*% Delta)
+        Agamma <- as.numeric(A %*% gamma)
+
+        eta_pi <-
+          mu_pi +
+          LDelta * alpha1 +
+          Agamma * alpha2 +
+          baseline
+
+        z_pi <- updateZ_cpp(
+          indicator = delta,
+          eta = eta_pi
+        )
+
+        Bgamma <- as.numeric(B %*% gamma)
+
+        xi_g <-
+          mu_Pi +
+          Bgamma * alpha3 +
+          pathways
+
+        z_Pi <- updateZ_cpp(
+          indicator = Delta,
+          eta = xi_g
+        )
+      }
+    }
+
+
     ## 7.7 Cell inclusion probability
 
     gamma_sum <- sum(gamma)
 
     rho <- rbeta(
       1L,
-      shape1 = gamma_sum + 1,
-      shape2 = C - gamma_sum + 1
+      shape1 = gamma_sum + rho_prior_a,
+      shape2 = C - gamma_sum + rho_prior_b
     )
 
     ## 7.8 Alpha1 and alpha2
@@ -548,8 +747,14 @@ bayesmap_summary_blocks <- function(
       Bgamma * alpha3 -
       pathways
 
-    C0P <- G + 1 / sigmaAlphaSq
-    r0P <- sum(zcorrP)
+    C0P <-
+      G +
+      1 / mu_Pi_prior_variance
+
+    r0P <-
+      sum(zcorrP) +
+      mu_Pi_prior_mean /
+      mu_Pi_prior_variance
 
     mu_Pi <- rnorm(
       1L,
@@ -704,6 +909,11 @@ bayesmap_summary_blocks <- function(
     N = N,
     phenotype_variance = phenotype_variance,
     n_blocks = n_blocks,
+    joint_blocks_per_iter = joint_blocks_per_iter,
+    priorPiGene = priorPiGene,
+    priorRho = priorRho,
+    rhoPriorStrength = rhoPriorStrength,
+    sigmaMuPiSq = sigmaMuPiSq,
     block_indices = block_indices,
     block_sizes = lengths(block_indices),
     dimensions = c(
