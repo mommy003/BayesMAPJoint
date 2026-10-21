@@ -45,6 +45,18 @@ updateJointIndicatorsSummary_cpp <- function(bhat, LD, N, beta, delta, Delta, ga
     .Call(`_BayesMAPJoint_updateJointIndicatorsSummary_cpp`, bhat, LD, N, beta, delta, Delta, gamma, L, A, B, snp_index, gene_index, cell_index, vare, sigmaBetaSq, alpha1, alpha2, alpha3, mu_pi, mu_Pi, baseline, pathways, rho)
 }
 
+#' Jointly update indicators using one summary-data LD block
+#'
+#' Uses a block-specific LD matrix for the SNP likelihood while evaluating
+#' the SNP, gene and cell hierarchy using the complete annotation matrices.
+#' All indices supplied from R are one-based.
+#'
+#' @name updateJointIndicatorsSummaryBlocks_cpp
+#' @keywords internal
+updateJointIndicatorsSummaryBlocks_cpp <- function(bhat_block, LD_block, N, beta, delta, Delta, gamma, L, A, B, block_indices, snp_index, gene_index, cell_index, vare, sigmaBetaSq, alpha1, alpha2, alpha3, mu_pi, mu_Pi, baseline, pathways, rho) {
+    .Call(`_BayesMAPJoint_updateJointIndicatorsSummaryBlocks_cpp`, bhat_block, LD_block, N, beta, delta, Delta, gamma, L, A, B, block_indices, snp_index, gene_index, cell_index, vare, sigmaBetaSq, alpha1, alpha2, alpha3, mu_pi, mu_Pi, baseline, pathways, rho)
+}
+
 updateZ_cpp <- function(indicator, eta) {
     .Call(`_BayesMAPJoint_updateZ_cpp`, indicator, eta)
 }
