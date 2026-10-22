@@ -320,8 +320,8 @@ commit used in the analysis.
 
 ## Authors
 
-- Jian Zeng
-- Moksedul Momin
+- Dr. Jian Zeng
+- Dr. Md. Moksedul Momin
 
 ## License
 
