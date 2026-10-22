@@ -3,6 +3,7 @@
 S3method(summary,BayesMAP)
 export(bayesmap)
 export(bayesmap_joint)
+export(bayesmap_joint_prior)
 export(bayesmap_joint_summary)
 export(bayesmap_joint_summary_blocks)
 export(bayesmap_joint_summary_blocks_prior)

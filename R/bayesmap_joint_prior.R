@@ -29,6 +29,13 @@
 ## ----------------------------------------------------------------
 ## 1. Experimental BayesMAP function
 ## ----------------------------------------------------------------
+#' Fit joint-prior BayesMAP using individual-level data
+#'
+#' Runs BayesMAP with local joint updates of connected SNP, gene,
+#' and cell indicators and sparse higher-level priors.
+#'
+#' @return A fitted object of class `BayesMAP`.
+#' @export
 
 bayesmap_joint_prior <- function(
     X, y,
