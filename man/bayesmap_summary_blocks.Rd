@@ -15,6 +15,8 @@ bayesmap_summary_blocks(
   baseline = NULL,
   pathways = NULL,
   phenotype_variance = 1,
+  estimate_vare = TRUE,
+  fixed_vare = NULL,
   niter = 2000,
   burnin = 0,
   thin = 1,
@@ -58,6 +60,14 @@ corresponding to each LD block.}
 \item{pathways}{Optional gene-level pathway covariates.}
 
 \item{phenotype_variance}{Phenotypic variance used in the summary-data likelihood.}
+
+\item{estimate_vare}{Logical; if \code{TRUE}, sample residual variance using
+the blockwise summary-data approximation. If \code{FALSE}, hold residual
+variance fixed at \code{fixed_vare}.}
+
+\item{fixed_vare}{Optional positive residual variance used when
+\code{estimate_vare = FALSE}. If \code{NULL}, it defaults to
+\code{phenotype_variance * (1 - startH2)}.}
 
 \item{niter}{Total number of MCMC iterations.}
 

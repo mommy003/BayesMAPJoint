@@ -18,6 +18,12 @@
 #' @param baseline Optional SNP-level baseline covariates.
 #' @param pathways Optional gene-level pathway covariates.
 #' @param phenotype_variance Phenotypic variance used in the summary-data likelihood.
+#' @param estimate_vare Logical; if `TRUE`, sample residual variance using
+#'   the blockwise summary-data approximation. If `FALSE`, hold residual
+#'   variance fixed at `fixed_vare`.
+#' @param fixed_vare Optional positive residual variance used when
+#'   `estimate_vare = FALSE`. If `NULL`, it defaults to
+#'   `phenotype_variance * (1 - startH2)`.
 #' @param niter Total number of MCMC iterations.
 #' @param burnin Number of burn-in iterations.
 #' @param thin Thinning interval.
@@ -77,6 +83,8 @@ bayesmap_summary_blocks <- function(
     baseline = NULL,
     pathways = NULL,
     phenotype_variance = 1,
+    estimate_vare = TRUE,
+    fixed_vare = NULL,
     niter = 2000,
     burnin = 0,
     thin = 1,
@@ -128,7 +136,19 @@ bayesmap_summary_blocks <- function(
       phenotype_variance <= 0) {
     stop("phenotype_variance must be positive and finite.")
   }
-
+  if (!is.logical(estimate_vare) ||
+      length(estimate_vare) != 1L ||
+      is.na(estimate_vare)) {
+    stop("estimate_vare must be TRUE or FALSE.")
+  }
+  
+  if (!is.null(fixed_vare) &&
+      (length(fixed_vare) != 1L ||
+       !is.finite(fixed_vare) ||
+       fixed_vare <= 0)) {
+    stop("fixed_vare must be NULL or a positive finite scalar.")
+  }
+  
   if (any(!is.finite(bhat))) {
     stop("bhat contains non-finite values.")
   }
@@ -314,6 +334,11 @@ bayesmap_summary_blocks <- function(
       startH2 >= 1) {
     stop("startH2 must be strictly between 0 and 1.")
   }
+  
+  if (!estimate_vare && is.null(fixed_vare)) {
+    fixed_vare <-
+      phenotype_variance * (1 - startH2)
+  }
 
   if (!is.finite(sigmaAlphaSq) ||
       sigmaAlphaSq <= 0) {
@@ -372,7 +397,12 @@ bayesmap_summary_blocks <- function(
   ## ================================================================
 
   varg <- phenotype_variance * startH2
-  vare <- phenotype_variance * (1 - startH2)
+  
+  vare <- if (estimate_vare) {
+    phenotype_variance * (1 - startH2)
+  } else {
+    fixed_vare
+  }
 
   sigmaBetaSq <- varg / m
 
@@ -782,45 +812,49 @@ bayesmap_summary_blocks <- function(
     }
 
     ## 7.12 Blockwise summary residual variance
-
+    
     effect <- beta * delta
-
+    
     LD_effect <- summary_ld_block_matvec(
       vector = effect,
       LD_blocks = LD_blocks,
       block_indices = block_indices
     )
-
+    
     varg <- as.numeric(
       crossprod(effect, LD_effect)
     )
-
+    
     if (!is.finite(varg) || varg < 0) {
       varg <- 0
     }
-
-    residual_variance_component <-
-      phenotype_variance -
-      2 * sum(effect * bhat) +
-      varg
-
-    residual_variance_component <- max(
-      residual_variance_component,
-      small_positive_value
-    )
-
-    summary_sse <- N * residual_variance_component
-
-    vare <- (
-      summary_sse +
-        nue * scalee
-    ) / rchisq(
-      1L,
-      df = N + nue
-    )
-
-    if (!is.finite(vare) || vare <= 0) {
-      vare <- small_positive_value
+    
+    if (estimate_vare) {
+      residual_variance_component <-
+        phenotype_variance -
+        2 * sum(effect * bhat) +
+        varg
+      
+      residual_variance_component <- max(
+        residual_variance_component,
+        small_positive_value
+      )
+      
+      summary_sse <- N * residual_variance_component
+      
+      vare <- (
+        summary_sse +
+          nue * scalee
+      ) / rchisq(
+        1L,
+        df = N + nue
+      )
+      
+      if (!is.finite(vare) || vare <= 0) {
+        vare <- small_positive_value
+      }
+    } else {
+      vare <- fixed_vare
     }
 
     ## 7.13 Heritability
@@ -908,6 +942,8 @@ bayesmap_summary_blocks <- function(
     niter = niter,
     N = N,
     phenotype_variance = phenotype_variance,
+    estimate_vare = estimate_vare,
+    fixed_vare = fixed_vare,
     n_blocks = n_blocks,
     joint_blocks_per_iter = joint_blocks_per_iter,
     priorPiGene = priorPiGene,
