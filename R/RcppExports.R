@@ -67,6 +67,19 @@ updateJointIndicatorsSummaryBlocks_cpp <- function(bhat_block, LD_block, N, beta
     .Call(`_BayesMAPJoint_updateJointIndicatorsSummaryBlocks_cpp`, bhat_block, LD_block, N, beta, delta, Delta, gamma, L, A, B, block_indices, snp_index, gene_index, cell_index, vare, sigmaBetaSq, alpha1, alpha2, alpha3, mu_pi, mu_Pi, baseline, pathways, rho)
 }
 
+#' Jointly update indicators using one low-rank summary-data LD block
+#'
+#' Uses a diagonal-corrected low-rank LD representation for the SNP
+#' likelihood while evaluating
+#' the SNP, gene and cell hierarchy using the complete annotation matrices.
+#' All indices supplied from R are one-based.
+#'
+#' @name updateJointIndicatorsSummaryLowRankBlocks_cpp
+#' @keywords internal
+updateJointIndicatorsSummaryLowRankBlocks_cpp <- function(bhat_block, U, lambda, diagonal_correction, N, beta, delta, Delta, gamma, L, A, B, block_indices, snp_index, gene_index, cell_index, vare, sigmaBetaSq, alpha1, alpha2, alpha3, mu_pi, mu_Pi, baseline, pathways, rho) {
+    .Call(`_BayesMAPJoint_updateJointIndicatorsSummaryLowRankBlocks_cpp`, bhat_block, U, lambda, diagonal_correction, N, beta, delta, Delta, gamma, L, A, B, block_indices, snp_index, gene_index, cell_index, vare, sigmaBetaSq, alpha1, alpha2, alpha3, mu_pi, mu_Pi, baseline, pathways, rho)
+}
+
 updateZ_cpp <- function(indicator, eta) {
     .Call(`_BayesMAPJoint_updateZ_cpp`, indicator, eta)
 }
