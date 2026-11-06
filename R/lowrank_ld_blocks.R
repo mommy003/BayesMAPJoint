@@ -327,3 +327,210 @@ reconstruct_lowrank_ld_block <- function(
   
   reconstructed_LD
 }
+
+
+
+# Validate a list of diagonal-corrected low-rank LD blocks
+validate_summary_lowrank_blocks <- function(
+    lowrank_blocks,
+    m
+) {
+  if (
+    !is.list(lowrank_blocks) ||
+    length(lowrank_blocks) < 1L
+  ) {
+    stop(
+      "lowrank_blocks must be a non-empty list."
+    )
+  }
+  
+  if (
+    length(m) != 1L ||
+    !is.finite(m) ||
+    m < 1L ||
+    m != as.integer(m)
+  ) {
+    stop("m must be a positive integer.")
+  }
+  
+  m <- as.integer(m)
+  
+  for (block_number in seq_along(
+    lowrank_blocks
+  )) {
+    tryCatch(
+      validate_lowrank_ld_block(
+        lowrank_blocks[[block_number]]
+      ),
+      error = function(error) {
+        stop(
+          "Invalid low-rank LD block ",
+          block_number,
+          ": ",
+          conditionMessage(error),
+          call. = FALSE
+        )
+      }
+    )
+  }
+  
+  all_indices <- unlist(
+    lapply(
+      lowrank_blocks,
+      function(block) {
+        block$block_indices
+      }
+    ),
+    use.names = FALSE
+  )
+  
+  if (length(all_indices) != m) {
+    stop(
+      "The low-rank LD blocks must contain every SNP exactly once."
+    )
+  }
+  
+  if (anyDuplicated(all_indices)) {
+    stop(
+      "A SNP cannot occur in more than one low-rank LD block."
+    )
+  }
+  
+  if (
+    !setequal(
+      all_indices,
+      seq_len(m)
+    )
+  ) {
+    stop(
+      paste0(
+        "Low-rank block indices must collectively ",
+        "equal seq_len(m)."
+      )
+    )
+  }
+  
+  invisible(TRUE)
+}
+
+
+# Update beta and delta over a list of low-rank LD blocks
+updateBetaDeltaSummaryLowRankBlocks <- function(
+    bhat,
+    lowrank_blocks,
+    N,
+    beta,
+    delta,
+    pi_j,
+    vare,
+    sigmaBetaSq
+) {
+  bhat <- as.numeric(bhat)
+  beta <- as.numeric(beta) + 0
+  delta <- as.integer(delta) + 0L
+  pi_j <- as.numeric(pi_j)
+  
+  m <- length(bhat)
+  
+  if (length(beta) != m) {
+    stop("beta must have length length(bhat).")
+  }
+  
+  if (length(delta) != m) {
+    stop("delta must have length length(bhat).")
+  }
+  
+  if (length(pi_j) != m) {
+    stop("pi_j must have length length(bhat).")
+  }
+  
+  if (
+    !is.list(lowrank_blocks) ||
+    length(lowrank_blocks) < 1L
+  ) {
+    stop(
+      "lowrank_blocks must be a non-empty list."
+    )
+  }
+  
+  rcorr <- numeric(m)
+  nnz <- 0L
+  
+  for (block_number in seq_along(
+    lowrank_blocks
+  )) {
+    block <-
+      lowrank_blocks[[block_number]]
+    
+    index <- block$block_indices
+    
+    block_update <-
+      updateBetaDeltaSummaryLowRank_cpp(
+        bhat = bhat[index],
+        U = block$U,
+        lambda = block$lambda,
+        diagonal_correction =
+          block$diagonal_correction,
+        N = N,
+        beta = beta[index],
+        delta = delta[index],
+        pi_j = pi_j[index],
+        vare = vare,
+        sigmaBetaSq = sigmaBetaSq
+      )
+    
+    beta[index] <- block_update$beta
+    delta[index] <- block_update$delta
+    rcorr[index] <- block_update$rcorr
+    
+    nnz <- nnz + block_update$nnz
+  }
+  
+  list(
+    beta = beta,
+    delta = delta,
+    rcorr = rcorr,
+    nnz = nnz
+  )
+}
+
+
+# Calculate block-diagonal low-rank LD times a vector
+#
+# The low-rank blocks must already have been validated by
+# validate_summary_lowrank_blocks().
+summary_lowrank_block_matvec <- function(
+    vector,
+    lowrank_blocks
+) {
+  vector <- as.numeric(vector)
+  result <- numeric(length(vector))
+  
+  for (block_number in seq_along(
+    lowrank_blocks
+  )) {
+    block <-
+      lowrank_blocks[[block_number]]
+    
+    index <- block$block_indices
+    block_vector <- vector[index]
+    
+    projected_vector <- as.numeric(
+      crossprod(
+        block$U,
+        block_vector
+      )
+    )
+    
+    result[index] <- as.numeric(
+      block$U %*% (
+        block$lambda *
+          projected_vector
+      ) +
+        block$diagonal_correction *
+        block_vector
+    )
+  }
+  
+  result
+}
