@@ -190,3 +190,56 @@ test_that(
     )
   }
 )
+
+
+test_that(
+  "public low-rank wrapper returns the expected fit",
+  {
+    m <- 3L
+    
+    block <- make_lowrank_ld_block(
+      U = diag(m),
+      lambda = rep(1, m),
+      block_indices = seq_len(m),
+      target_diagonal = 1,
+      variance_explained = 1
+    )
+    
+    set.seed(123)
+    
+    fit <- bayesmap_summary_lowrank(
+      bhat = c(0.01, -0.02, 0.015),
+      lowrank_blocks = list(block),
+      N = 1000,
+      L = matrix(1, nrow = m, ncol = 1),
+      A = matrix(1, nrow = m, ncol = 1),
+      B = matrix(1, nrow = 1, ncol = 1),
+      estimate_vare = FALSE,
+      fixed_vare = 0.8,
+      niter = 5,
+      burnin = 1,
+      joint_blocks_per_iter = 0L,
+      verbose = FALSE
+    )
+    
+    expect_s3_class(
+      fit,
+      "BayesMAPSummaryLowRank"
+    )
+    
+    expect_identical(
+      fit$ld_representation,
+      "lowrank"
+    )
+    
+    expect_equal(
+      fit$retained_ranks,
+      3L
+    )
+    
+    expect_equal(
+      fit$variance_explained,
+      1
+    )
+  }
+)
