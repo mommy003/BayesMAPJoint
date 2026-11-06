@@ -20,8 +20,8 @@ bayesmap_summary_lowrank(bhat, lowrank_blocks, N, L, A, B, ...)
 
 \item{B}{Gene-by-cell (or pathway) annotation matrix.}
 
-\item{...}{Additional arguments passed to \code{\link[=bayesmap_summary_blocks]{bayesmap_summary_blocks()}}.
-Currently, \code{joint_blocks_per_iter} must be zero.}
+\item{...}{Additional arguments passed to \code{\link[=bayesmap_summary_blocks]{bayesmap_summary_blocks()}},
+including \code{joint_blocks_per_iter}.}
 }
 \value{
 A fitted object with class \code{BayesMAPSummaryLowRank},

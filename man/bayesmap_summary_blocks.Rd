@@ -117,9 +117,7 @@ is supplied.}
 
 \item{lowrank_blocks}{Optional list of diagonal-corrected low-rank LD
 blocks. When supplied, \code{LD_blocks} and \code{block_indices} must both be
-\code{NULL}. Each block must be created by \code{\link[=make_lowrank_ld_block]{make_lowrank_ld_block()}}.
-Low-rank joint-indicator updates are not yet supported, so
-\code{joint_blocks_per_iter} must be zero in this mode.}
+\code{NULL}. Each block must be created by \code{\link[=make_lowrank_ld_block]{make_lowrank_ld_block()}}.}
 }
 \value{
 An object of class

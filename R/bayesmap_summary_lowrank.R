@@ -14,8 +14,8 @@
 #'
 #' @param lowrank_blocks A non-empty list of
 #'   `BayesMAPLowRankLDBlock` objects covering every SNP exactly once.
-#' @param ... Additional arguments passed to [bayesmap_summary_blocks()].
-#'   Currently, `joint_blocks_per_iter` must be zero.
+#' @param ... Additional arguments passed to [bayesmap_summary_blocks()],
+#'   including `joint_blocks_per_iter`.
 #'
 #' @return A fitted object with class `BayesMAPSummaryLowRank`,
 #'   `BayesMAPSummaryBlocks`, `BayesMAPSummary`, and `BayesMAP`.
