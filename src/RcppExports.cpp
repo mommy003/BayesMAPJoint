@@ -47,6 +47,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// updateBetaDeltaSummaryLowRank_cpp
+List updateBetaDeltaSummaryLowRank_cpp(NumericVector bhat, NumericMatrix U, NumericVector lambda, NumericVector diagonal_correction, double N, NumericVector beta, IntegerVector delta, NumericVector pi_j, double vare, double sigmaBetaSq);
+RcppExport SEXP _BayesMAPJoint_updateBetaDeltaSummaryLowRank_cpp(SEXP bhatSEXP, SEXP USEXP, SEXP lambdaSEXP, SEXP diagonal_correctionSEXP, SEXP NSEXP, SEXP betaSEXP, SEXP deltaSEXP, SEXP pi_jSEXP, SEXP vareSEXP, SEXP sigmaBetaSqSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type bhat(bhatSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type U(USEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type diagonal_correction(diagonal_correctionSEXP);
+    Rcpp::traits::input_parameter< double >::type N(NSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type pi_j(pi_jSEXP);
+    Rcpp::traits::input_parameter< double >::type vare(vareSEXP);
+    Rcpp::traits::input_parameter< double >::type sigmaBetaSq(sigmaBetaSqSEXP);
+    rcpp_result_gen = Rcpp::wrap(updateBetaDeltaSummaryLowRank_cpp(bhat, U, lambda, diagonal_correction, N, beta, delta, pi_j, vare, sigmaBetaSq));
+    return rcpp_result_gen;
+END_RCPP
+}
 // updateDelta_cpp
 IntegerVector updateDelta_cpp(IntegerVector Delta, IntegerVector delta, NumericMatrix L, IntegerVector gamma, NumericMatrix A, NumericMatrix B, double alpha1, double alpha2, double alpha3, double mu_pi, double mu_Pi, NumericVector baseline, NumericVector pathways, double rho);
 RcppExport SEXP _BayesMAPJoint_updateDelta_cpp(SEXP DeltaSEXP, SEXP deltaSEXP, SEXP LSEXP, SEXP gammaSEXP, SEXP ASEXP, SEXP BSEXP, SEXP alpha1SEXP, SEXP alpha2SEXP, SEXP alpha3SEXP, SEXP mu_piSEXP, SEXP mu_PiSEXP, SEXP baselineSEXP, SEXP pathwaysSEXP, SEXP rhoSEXP) {
@@ -211,6 +231,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_BayesMAPJoint_updateBetaDelta_cpp", (DL_FUNC) &_BayesMAPJoint_updateBetaDelta_cpp, 8},
     {"_BayesMAPJoint_updateBetaDeltaSummary_cpp", (DL_FUNC) &_BayesMAPJoint_updateBetaDeltaSummary_cpp, 8},
+    {"_BayesMAPJoint_updateBetaDeltaSummaryLowRank_cpp", (DL_FUNC) &_BayesMAPJoint_updateBetaDeltaSummaryLowRank_cpp, 10},
     {"_BayesMAPJoint_updateDelta_cpp", (DL_FUNC) &_BayesMAPJoint_updateDelta_cpp, 14},
     {"_BayesMAPJoint_updateGamma_cpp", (DL_FUNC) &_BayesMAPJoint_updateGamma_cpp, 14},
     {"_BayesMAPJoint_updateJointIndicators_cpp", (DL_FUNC) &_BayesMAPJoint_updateJointIndicators_cpp, 23},

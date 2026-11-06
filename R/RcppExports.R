@@ -9,6 +9,16 @@ updateBetaDeltaSummary_cpp <- function(bhat, LD, N, beta, delta, pi_j, vare, sig
     .Call(`_BayesMAPJoint_updateBetaDeltaSummary_cpp`, bhat, LD, N, beta, delta, pi_j, vare, sigmaBetaSq)
 }
 
+#' Update summary-data SNP effects using low-rank LD
+#'
+#' Uses the diagonal-corrected representation
+#' `R = U diag(lambda) U' + diag(diagonal_correction)`.
+#'
+#' @keywords internal
+updateBetaDeltaSummaryLowRank_cpp <- function(bhat, U, lambda, diagonal_correction, N, beta, delta, pi_j, vare, sigmaBetaSq) {
+    .Call(`_BayesMAPJoint_updateBetaDeltaSummaryLowRank_cpp`, bhat, U, lambda, diagonal_correction, N, beta, delta, pi_j, vare, sigmaBetaSq)
+}
+
 updateDelta_cpp <- function(Delta, delta, L, gamma, A, B, alpha1, alpha2, alpha3, mu_pi, mu_Pi, baseline, pathways, rho) {
     .Call(`_BayesMAPJoint_updateDelta_cpp`, Delta, delta, L, gamma, A, B, alpha1, alpha2, alpha3, mu_pi, mu_Pi, baseline, pathways, rho)
 }
