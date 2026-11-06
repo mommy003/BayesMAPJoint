@@ -18,6 +18,11 @@
 #' @param baseline Optional SNP-level baseline covariates.
 #' @param pathways Optional gene-level pathway covariates.
 #' @param phenotype_variance Phenotypic variance used in the summary-data likelihood.
+#' @param lowrank_blocks Optional list of diagonal-corrected low-rank LD
+#'   blocks. When supplied, `LD_blocks` and `block_indices` must both be
+#'   `NULL`. Each block must be created by [make_lowrank_ld_block()].
+#'   Low-rank joint-indicator updates are not yet supported, so
+#'   `joint_blocks_per_iter` must be zero in this mode.
 #' @param estimate_vare Logical; if `TRUE`, sample residual variance using
 #'   the blockwise summary-data approximation. If `FALSE`, hold residual
 #'   variance fixed at `fixed_vare`.
@@ -104,7 +109,8 @@ bayesmap_summary_blocks <- function(
     priorPiGene = NULL,
     priorRho = NULL,
     rhoPriorStrength = 20,
-    sigmaMuPiSq = 1
+    sigmaMuPiSq = 1,
+    lowrank_blocks = NULL
 ) {
   ## ================================================================
   ## 1. Dimensions and validation
@@ -153,15 +159,56 @@ bayesmap_summary_blocks <- function(
     stop("bhat contains non-finite values.")
   }
 
-  validated_blocks <- validate_summary_ld_blocks(
-    LD_blocks = LD_blocks,
-    block_indices = block_indices,
-    m = m
+  use_lowrank <- !is.null(
+    lowrank_blocks
   )
-
-  LD_blocks <- validated_blocks$LD_blocks
-  block_indices <- validated_blocks$block_indices
-  n_blocks <- length(LD_blocks)
+  
+  if (use_lowrank) {
+    if (
+      !is.null(LD_blocks) ||
+      !is.null(block_indices)
+    ) {
+      stop(
+        paste0(
+          "When lowrank_blocks is supplied, ",
+          "LD_blocks and block_indices must be NULL."
+        )
+      )
+    }
+    
+    validate_summary_lowrank_blocks(
+      lowrank_blocks = lowrank_blocks,
+      m = m
+    )
+    
+    block_indices <- lapply(
+      lowrank_blocks,
+      function(block) {
+        block$block_indices
+      }
+    )
+    
+    n_blocks <- length(
+      lowrank_blocks
+    )
+  } else {
+    validated_blocks <-
+      validate_summary_ld_blocks(
+        LD_blocks = LD_blocks,
+        block_indices = block_indices,
+        m = m
+      )
+    
+    LD_blocks <-
+      validated_blocks$LD_blocks
+    
+    block_indices <-
+      validated_blocks$block_indices
+    
+    n_blocks <- length(
+      LD_blocks
+    )
+  }
 
   ## Map every genome-wide SNP index to its LD block
   snp_to_block <- integer(m)
@@ -254,7 +301,18 @@ bayesmap_summary_blocks <- function(
   joint_blocks_per_iter <- as.integer(
     joint_blocks_per_iter
   )
-
+  if (
+    use_lowrank &&
+    joint_blocks_per_iter > 0L
+  ) {
+    stop(
+      paste0(
+        "Low-rank joint-indicator updates are not yet implemented. ",
+        "Use joint_blocks_per_iter = 0L."
+      )
+    )
+  }
+  
   if (!is.null(priorPiGene) &&
       (length(priorPiGene) != 1L ||
        !is.finite(priorPiGene) ||
@@ -492,17 +550,30 @@ bayesmap_summary_blocks <- function(
 
     ## 7.2 Blockwise summary-data beta and delta update
 
-    snp_update <- updateBetaDeltaSummaryBlocks(
-      bhat = bhat,
-      LD_blocks = LD_blocks,
-      block_indices = block_indices,
-      N = N,
-      beta = beta,
-      delta = delta,
-      pi_j = pi_j,
-      vare = vare,
-      sigmaBetaSq = sigmaBetaSq
-    )
+    snp_update <- if (use_lowrank) {
+      updateBetaDeltaSummaryLowRankBlocks(
+        bhat = bhat,
+        lowrank_blocks = lowrank_blocks,
+        N = N,
+        beta = beta,
+        delta = delta,
+        pi_j = pi_j,
+        vare = vare,
+        sigmaBetaSq = sigmaBetaSq
+      )
+    } else {
+      updateBetaDeltaSummaryBlocks(
+        bhat = bhat,
+        LD_blocks = LD_blocks,
+        block_indices = block_indices,
+        N = N,
+        beta = beta,
+        delta = delta,
+        pi_j = pi_j,
+        vare = vare,
+        sigmaBetaSq = sigmaBetaSq
+      )
+    }
 
     beta <- snp_update$beta
     delta <- snp_update$delta
@@ -815,11 +886,18 @@ bayesmap_summary_blocks <- function(
     
     effect <- beta * delta
     
-    LD_effect <- summary_ld_block_matvec(
-      vector = effect,
-      LD_blocks = LD_blocks,
-      block_indices = block_indices
-    )
+    LD_effect <- if (use_lowrank) {
+      summary_lowrank_block_matvec(
+        vector = effect,
+        lowrank_blocks = lowrank_blocks
+      )
+    } else {
+      summary_ld_block_matvec(
+        vector = effect,
+        LD_blocks = LD_blocks,
+        block_indices = block_indices
+      )
+    }
     
     varg <- as.numeric(
       crossprod(effect, LD_effect)
@@ -945,6 +1023,33 @@ bayesmap_summary_blocks <- function(
     estimate_vare = estimate_vare,
     fixed_vare = fixed_vare,
     n_blocks = n_blocks,
+    ld_representation = if (use_lowrank) {
+      "lowrank"
+    } else {
+      "exact_blocks"
+    },
+    retained_ranks = if (use_lowrank) {
+      vapply(
+        lowrank_blocks,
+        function(block) {
+          block$retained_rank
+        },
+        integer(1)
+      )
+    } else {
+      NULL
+    },
+    variance_explained = if (use_lowrank) {
+      vapply(
+        lowrank_blocks,
+        function(block) {
+          block$variance_explained
+        },
+        numeric(1)
+      )
+    } else {
+      NULL
+    },
     joint_blocks_per_iter = joint_blocks_per_iter,
     priorPiGene = priorPiGene,
     priorRho = priorRho,

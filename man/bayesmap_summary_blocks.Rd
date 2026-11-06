@@ -36,7 +36,8 @@ bayesmap_summary_blocks(
   priorPiGene = NULL,
   priorRho = NULL,
   rhoPriorStrength = 20,
-  sigmaMuPiSq = 1
+  sigmaMuPiSq = 1,
+  lowrank_blocks = NULL
 )
 }
 \arguments{
@@ -113,6 +114,12 @@ When supplied, the prior mean of \code{mu_Pi} is \code{qnorm(priorPiGene)}.}
 
 \item{sigmaMuPiSq}{Prior variance of \code{mu_Pi} when \code{priorPiGene}
 is supplied.}
+
+\item{lowrank_blocks}{Optional list of diagonal-corrected low-rank LD
+blocks. When supplied, \code{LD_blocks} and \code{block_indices} must both be
+\code{NULL}. Each block must be created by \code{\link[=make_lowrank_ld_block]{make_lowrank_ld_block()}}.
+Low-rank joint-indicator updates are not yet supported, so
+\code{joint_blocks_per_iter} must be zero in this mode.}
 }
 \value{
 An object of class
