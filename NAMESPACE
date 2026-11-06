@@ -10,6 +10,7 @@ export(bayesmap_joint_summary_blocks_prior)
 export(bayesmap_joint_summary_prior)
 export(bayesmap_summary)
 export(bayesmap_summary_blocks)
+export(make_lowrank_ld_block)
 importFrom(Rcpp,sourceCpp)
 importFrom(stats,
   cor,
